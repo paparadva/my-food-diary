@@ -1,4 +1,4 @@
-package io.github.paparadva.myfooddiary.controller;
+package io.github.paparadva.myfooddiary.web.controller;
 
 import io.github.paparadva.myfooddiary.model.Product;
 import io.github.paparadva.myfooddiary.service.ProductService;
@@ -29,6 +29,6 @@ public class ProductController {
 
     @GetMapping
     public Product getProductByName(@RequestParam String name) {
-        return productService.getProduct(name).orElseThrow();
+        return productService.getProduct(name);
     }
 }
