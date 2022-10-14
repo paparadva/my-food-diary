@@ -1,5 +1,6 @@
 package io.github.paparadva.myfooddiary.scraper;
 
+import io.github.paparadva.myfooddiary.config.ScrapingConfig;
 import io.github.paparadva.myfooddiary.model.Product;
 import io.github.paparadva.myfooddiary.model.ProductSuggestion;
 import io.github.paparadva.myfooddiary.service.ProductService;
@@ -21,8 +22,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class CalorizatorWebScraper implements InitializingBean {
 
-    private String PRODUCT_PAGE_URL = "https://calorizator.ru/product/all?page=";
-
+    private final ScrapingConfig config;
     private final ProductSuggestionService suggestionService;
     private final ProductService productService;
 
@@ -42,16 +42,16 @@ public class CalorizatorWebScraper implements InitializingBean {
     private void scrapeCalorizator() throws IOException, InterruptedException {
         log.info("Scraping started");
 
-        int pageCount = findTotalPageCount();
-        Thread.sleep(2000);
+        int pageCount = Math.min(findTotalPageCount(), config.getLoadPageLimit());
+        Thread.sleep(config.getPauseTimeMs());
 
-        for (int pageIndex = 0; pageIndex < 1; pageIndex++) {
+        for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
             List<Product> products = findProductsOnPage(pageIndex);
             productService.saveProducts(products);
             suggestionService.saveProducts(products.stream()
                     .map(product -> new ProductSuggestion(product.getName()))
                     .toList());
-            Thread.sleep(2000);
+            Thread.sleep(config.getPauseTimeMs());
         }
 
         log.info("Scraping finished");
@@ -60,7 +60,7 @@ public class CalorizatorWebScraper implements InitializingBean {
 
     private int findTotalPageCount() throws IOException {
         log.info("Parsing page for page count");
-        Document doc = Jsoup.connect(PRODUCT_PAGE_URL + "0").get();
+        Document doc = Jsoup.connect(config.getCalorizatorUrl() + "0").get();
 
         var li = doc.selectFirst(".pager-last");
         Objects.requireNonNull(li, ".pager-last element not found");
@@ -77,7 +77,7 @@ public class CalorizatorWebScraper implements InitializingBean {
 
     private List<Product> findProductsOnPage(int pageIndex) throws IOException {
         log.info("Scraping page index: " + pageIndex);
-        Document doc = Jsoup.connect(PRODUCT_PAGE_URL + pageIndex).get();
+        Document doc = Jsoup.connect(config.getCalorizatorUrl() + pageIndex).get();
 
         Elements productRows = doc.select(".views-table tbody tr");
         log.info("Found {} products on this page", productRows.size());
