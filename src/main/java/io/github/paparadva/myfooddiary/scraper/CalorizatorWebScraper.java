@@ -110,7 +110,7 @@ public class CalorizatorWebScraper implements InitializingBean {
 
     private static double parseDouble(String text, String errorMessage) {
         try {
-            return Double.parseDouble(text);
+            return text.isBlank() ? 0 : Double.parseDouble(text);
         } catch (NumberFormatException e) {
             log.error(errorMessage, e);
             throw e;
@@ -119,7 +119,7 @@ public class CalorizatorWebScraper implements InitializingBean {
 
     private static int parseInt(String text, String errorMessage) {
         try {
-            return Integer.parseInt(text);
+            return text.isBlank() ? 0 : Integer.parseInt(text);
         } catch (NumberFormatException e) {
             log.error(errorMessage, e);
             throw e;
