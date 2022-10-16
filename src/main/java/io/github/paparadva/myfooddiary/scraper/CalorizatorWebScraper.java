@@ -10,7 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -20,23 +22,22 @@ import java.util.Objects;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class CalorizatorWebScraper implements InitializingBean {
+public class CalorizatorWebScraper {
 
     private final ScrapingConfig config;
     private final ProductSuggestionService suggestionService;
     private final ProductService productService;
 
-    @Override
-    public void afterPropertiesSet() {
-        new Thread(() -> {
-            try {
-                scrapeCalorizator();
-            } catch (InterruptedException e) {
-                log.info("Scraping thread was interrupted");
-            } catch (Exception e) {
-                log.error("Scraping failed with exception", e);
-            }
-        }).start();
+    @Async
+    @EventListener
+    public void onApplicationReady(ApplicationReadyEvent event) {
+        try {
+            scrapeCalorizator();
+        } catch (InterruptedException e) {
+            log.info("Scraping thread was interrupted");
+        } catch (Exception e) {
+            log.error("Scraping failed with exception", e);
+        }
     }
 
     private void scrapeCalorizator() throws IOException, InterruptedException {
