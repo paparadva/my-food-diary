@@ -2,9 +2,7 @@ package io.github.paparadva.myfooddiary.scraper;
 
 import io.github.paparadva.myfooddiary.config.ScrapingConfig;
 import io.github.paparadva.myfooddiary.model.Product;
-import io.github.paparadva.myfooddiary.model.ProductSuggestion;
 import io.github.paparadva.myfooddiary.service.ProductService;
-import io.github.paparadva.myfooddiary.service.ProductSuggestionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -25,7 +23,6 @@ import java.util.Objects;
 public class CalorizatorWebScraper {
 
     private final ScrapingConfig config;
-    private final ProductSuggestionService suggestionService;
     private final ProductService productService;
 
     @Async
@@ -49,9 +46,6 @@ public class CalorizatorWebScraper {
         for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
             List<Product> products = findProductsOnPage(pageIndex);
             productService.saveProducts(products);
-            suggestionService.saveProducts(products.stream()
-                    .map(product -> new ProductSuggestion(product.getName()))
-                    .toList());
             Thread.sleep(config.getPauseTimeMs());
         }
 

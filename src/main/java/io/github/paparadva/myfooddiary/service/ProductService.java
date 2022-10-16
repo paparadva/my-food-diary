@@ -7,4 +7,5 @@ import java.util.List;
 public interface ProductService {
     Product getProduct(String name);
     void saveProducts(List<Product> products);
+    List<String> searchProducts(String nameQuery);
 }
