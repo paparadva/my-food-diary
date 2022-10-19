@@ -2,9 +2,11 @@ package io.github.paparadva.myfooddiary.service;
 
 import io.github.paparadva.myfooddiary.exception.ProductDoesNotExist;
 import io.github.paparadva.myfooddiary.mapper.ConsumedProductMapper;
+import io.github.paparadva.myfooddiary.model.ConsumedProduct;
 import io.github.paparadva.myfooddiary.repository.ConsumedProductRepository;
 import io.github.paparadva.myfooddiary.repository.ProductRepository;
-import io.github.paparadva.myfooddiary.web.dto.ConsumedProductRequest;
+import io.github.paparadva.myfooddiary.web.dto.ConsumedProductDto;
+import io.github.paparadva.myfooddiary.web.dto.ConsumedProductsResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,7 +28,7 @@ public class ConsumedProductServiceImpl implements ConsumedProductService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     @Override
-    public void saveConsumedProducts(LocalDate date, List<ConsumedProductRequest> productRequests) {
+    public void saveConsumedProducts(LocalDate date, List<ConsumedProductDto> productRequests) {
         consumedProductRepository.deleteAllByConsumptionDate(date);
 
         var consumedProducts = IntStream
@@ -39,12 +41,23 @@ public class ConsumedProductServiceImpl implements ConsumedProductService {
                 })
                 .mapToObj(index -> {
                     var request = productRequests.get(index);
-                    var consumedProduct = mapper.consumedProductRequestToEntity(request, date, index);
+                    var consumedProduct = mapper.consumedProductDtoToEntity(request, date, index);
                     log.info("Mapped ConsumedProduct: {}", consumedProduct);
                     return consumedProduct;
                 })
                 .toList();
 
         consumedProductRepository.saveAll(consumedProducts);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @Override
+    public ConsumedProductsResponse getConsumedProducts(LocalDate date) {
+        List<ConsumedProduct> consumedProducts = consumedProductRepository.getAllByConsumptionDateOrderByEntryIndexAsc(date);
+        log.info("Found consumed products for date={}: {}", date, consumedProducts);
+        return new ConsumedProductsResponse(date, consumedProducts
+                .stream()
+                .map(mapper::consumedProductEntityToDto)
+                .toList());
     }
 }

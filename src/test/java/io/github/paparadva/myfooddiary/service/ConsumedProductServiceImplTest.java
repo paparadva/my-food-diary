@@ -5,7 +5,8 @@ import io.github.paparadva.myfooddiary.mapper.ConsumedProductMapperImpl;
 import io.github.paparadva.myfooddiary.model.ConsumedProduct;
 import io.github.paparadva.myfooddiary.repository.ConsumedProductRepository;
 import io.github.paparadva.myfooddiary.repository.ProductRepository;
-import io.github.paparadva.myfooddiary.web.dto.ConsumedProductRequest;
+import io.github.paparadva.myfooddiary.web.dto.ConsumedProductDto;
+import io.github.paparadva.myfooddiary.web.dto.ConsumedProductsResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -56,8 +57,8 @@ class ConsumedProductServiceImplTest {
         // arrange
         var date = LocalDate.of(2022, 10, 18);
         var requestData = List.of(
-                new ConsumedProductRequest("product1", 10),
-                new ConsumedProductRequest("product2", 20));
+                new ConsumedProductDto("product1", 10),
+                new ConsumedProductDto("product2", 20));
 
         when(productRepository.existsById(anyString())).thenReturn(true);
 
@@ -86,7 +87,7 @@ class ConsumedProductServiceImplTest {
     void shouldDeletePreviousRecordsBeforeSave() {
         // arrange
         var date = LocalDate.of(2022, 10, 18);
-        var requestData = List.<ConsumedProductRequest>of();
+        var requestData = List.<ConsumedProductDto>of();
 
         // act
         service.saveConsumedProducts(date, requestData);
@@ -102,8 +103,8 @@ class ConsumedProductServiceImplTest {
         // arrange
         var date = LocalDate.of(2022, 10, 18);
         var requestData = List.of(
-                new ConsumedProductRequest("product1", 0),
-                new ConsumedProductRequest("product2", 0));
+                new ConsumedProductDto("product1", 0),
+                new ConsumedProductDto("product2", 0));
 
         when(productRepository.existsById(anyString())).thenReturn(true);
 
@@ -121,7 +122,7 @@ class ConsumedProductServiceImplTest {
     void shouldThrowExceptionIfProductDoesNotExist() {
         // arrange
         var date = LocalDate.of(2022, 10, 18);
-        var requestData = List.of(new ConsumedProductRequest("fake product", 0));
+        var requestData = List.of(new ConsumedProductDto("fake product", 0));
 
         when(productRepository.existsById("fake product")).thenReturn(false);
 
@@ -129,5 +130,51 @@ class ConsumedProductServiceImplTest {
         var exception = assertThrows(ProductDoesNotExist.class,
                 () -> service.saveConsumedProducts(date, requestData));
         assertTrue(exception.getMessage().contains("fake product"));
+    }
+
+    @Test
+    void shouldReturnListOfProducts() {
+        // arrange
+        var date = LocalDate.of(2022, 10, 18);
+        var storedConsumedProducts = List.of(
+                new ConsumedProduct(date, 0, "product1", 100),
+                new ConsumedProduct(date, 1, "product2", 200));
+
+        when(consumedProductRepository.getAllByConsumptionDateOrderByEntryIndexAsc(date))
+                .thenReturn(storedConsumedProducts);
+
+        // act
+        ConsumedProductsResponse response = service.getConsumedProducts(date);
+
+        // assert
+        verify(consumedProductRepository).getAllByConsumptionDateOrderByEntryIndexAsc(dateCaptor.capture());
+        assertEquals(date, dateCaptor.getValue());
+
+        assertEquals(date, response.date());
+
+        ConsumedProductDto product1 = response.consumedProducts().get(0);
+        assertEquals("product1", product1.productName());
+        assertEquals(100, product1.grams());
+
+        ConsumedProductDto product2 = response.consumedProducts().get(1);
+        assertEquals("product2", product2.productName());
+        assertEquals(200, product2.grams());
+    }
+
+    @Test
+    void shouldReturnEmptyListOfProducts() {
+        // arrange
+        var date = LocalDate.of(2022, 10, 18);
+        when(consumedProductRepository.getAllByConsumptionDateOrderByEntryIndexAsc(date)).thenReturn(List.of());
+
+        // act
+        ConsumedProductsResponse response = service.getConsumedProducts(date);
+
+        // assert
+        verify(consumedProductRepository).getAllByConsumptionDateOrderByEntryIndexAsc(dateCaptor.capture());
+        assertEquals(date, dateCaptor.getValue());
+
+        assertEquals(date, response.date());
+        assertEquals(0, response.consumedProducts().size());
     }
 }
