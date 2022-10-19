@@ -1,5 +1,6 @@
 package io.github.paparadva.myfooddiary.web.handler;
 
+import io.github.paparadva.myfooddiary.exception.ProductDoesNotExist;
 import io.github.paparadva.myfooddiary.exception.ProductNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -10,6 +11,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @ControllerAdvice
 @Slf4j
 public class ControllerExceptionHandler {
+
+    @ExceptionHandler(ProductDoesNotExist.class)
+    public ResponseEntity<String> handleProductDoesNotExists(Exception e) {
+        log.info("Product does not exist exception: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    }
 
     @ExceptionHandler(ProductNotFoundException.class)
     public ResponseEntity<String> handleNotFound(Exception e) {
