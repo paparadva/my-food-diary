@@ -5,7 +5,7 @@ import io.github.paparadva.myfooddiary.mapper.ConsumedProductMapper;
 import io.github.paparadva.myfooddiary.model.ConsumedProduct;
 import io.github.paparadva.myfooddiary.repository.ConsumedProductRepository;
 import io.github.paparadva.myfooddiary.repository.ProductRepository;
-import io.github.paparadva.myfooddiary.web.dto.ConsumedProductDto;
+import io.github.paparadva.myfooddiary.web.dto.ConsumedProductRequestDto;
 import io.github.paparadva.myfooddiary.web.dto.ConsumedProductsResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,20 +28,20 @@ public class ConsumedProductServiceImpl implements ConsumedProductService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     @Override
-    public void saveConsumedProducts(LocalDate date, List<ConsumedProductDto> productRequests) {
+    public void saveConsumedProducts(LocalDate date, List<ConsumedProductRequestDto> productRequests) {
         consumedProductRepository.deleteAllByConsumptionDate(date);
 
         var consumedProducts = IntStream
                 .range(0, productRequests.size())
-                .peek(index -> {
-                    var request = productRequests.get(index);
-                    if (!productRepository.existsById(request.productName())) {
-                        throw new ProductDoesNotExist(request.productName());
-                    }
-                })
                 .mapToObj(index -> {
                     var request = productRequests.get(index);
-                    var consumedProduct = mapper.consumedProductDtoToEntity(request, date, index);
+
+                    var product = productRepository.findById(request.productName())
+                            .orElseThrow(() -> new ProductDoesNotExist(request.productName()));
+
+                    var consumedProduct = mapper.requestDtoToEntity(request, date, index);
+                    consumedProduct.setProduct(product);
+
                     log.info("Mapped ConsumedProduct: {}", consumedProduct);
                     return consumedProduct;
                 })
@@ -57,7 +57,7 @@ public class ConsumedProductServiceImpl implements ConsumedProductService {
         log.info("Found consumed products for date={}: {}", date, consumedProducts);
         return new ConsumedProductsResponse(date, consumedProducts
                 .stream()
-                .map(mapper::consumedProductEntityToDto)
+                .map(mapper::entityToResponseDto)
                 .toList());
     }
 }

@@ -4,10 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.time.LocalDate;
 
 @Entity
@@ -21,6 +18,9 @@ public class ConsumedProduct {
     private LocalDate consumptionDate;
     @Id
     private Integer entryIndex;
-    private String productName;
     private Integer grams;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_name")
+    private Product product;
 }
