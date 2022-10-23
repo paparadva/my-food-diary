@@ -9,3 +9,5 @@ The service requires a Postgres database:
 Run the app with:
 
 > ./gradlew bootRun
+
+[Frontend repo](https://github.com/paparadva/my-food-diary-frontend)
